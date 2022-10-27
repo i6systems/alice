@@ -11,7 +11,7 @@
 
 namespace Nelmio\Alice\Persister;
 
-use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Persistence\ObjectManager;
 use Nelmio\Alice\PersisterInterface;
 
 /**

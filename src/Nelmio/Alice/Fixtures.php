@@ -11,7 +11,7 @@
 
 namespace Nelmio\Alice;
 
-use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Persistence\ObjectManager;
 use Nelmio\Alice\Persister\Doctrine;
 use Psr\Log\LoggerInterface;
 use Nelmio\Alice\Fixtures\Loader;
