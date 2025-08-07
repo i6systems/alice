@@ -21,7 +21,7 @@
     "require": {
         "php": "^7.4||^8.0",
         "fakerphp/faker": "^1.24.1",
-        "symfony/yaml": "^2.0||^3.0||^4.0||^5.0"
+        "symfony/yaml": "^5.0 || ^6.0 || ^7.0"
     },
     "require-dev": {
         "doctrine/common": "^2.3",
