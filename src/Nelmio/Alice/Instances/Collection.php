@@ -111,7 +111,7 @@ class Collection
     {
         if (false === $this->containsKey($name)) {
             throw new \UnexpectedValueException(
-                sprintf('Instance %s is not defined', $name)
+                sprintf('Reference "%s" is not defined. First 5 available references are %s"%s"', $name, PHP_EOL, implode('", "', array_slice(array_keys($this->instances), 0, 5)))
             );
         }
         $object = $this->get($name);
