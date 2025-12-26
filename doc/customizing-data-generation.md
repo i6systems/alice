@@ -1,10 +1,20 @@
 # Customizing Data Generation
 
+1. [Faker Data](#faker-data)
+    1. [Localized Fake Data](#localized-fake-data)
+    1. [Random data](#random-data)
+    1. [Default Providers](#default-providers)
+        1. [Identity](#identity)
+        1. [Current](#current)
+        1. [Cast](#cast)
+1. [Custom Faker Data Providers](#custom-faker-data-providers)
+
+
 ## Faker Data
 
-Alice integrates with the [Faker](https://github.com/fzaninotto/Faker) library.
-Using `<foo()>` you can call Faker data providers to generate random data. Check
-the [list of Faker providers](https://github.com/fzaninotto/Faker#formatters).
+Alice integrates with the [Faker][1] library. Using `<foo()>` you can call Faker
+data providers to generate random data. Check the
+[list of Faker providers](https://fakerphp.github.io/formatters).
 
 Let's turn our static bob user into a randomized entry:
 
@@ -13,7 +23,7 @@ Nelmio\Entity\User:
     user{1..10}:
         username: '<username()>'
         fullname: '<firstName()> <lastName()>'
-        birthDate: '<date()>'
+        birthDate: '<date_create()>'
         email: '<email()>'
         favoriteNumber: '<numberBetween(1, 200)>'
 ```
@@ -21,28 +31,25 @@ Nelmio\Entity\User:
 As you see in the last line, you can also pass arguments to those just as if
 you were calling a function.
 
-To pass Faker Data to another Faker provider, you can use the `$fake()` closure
-within faker calls. For example use `$fake('firstName', 'de_DE')` or
-`$fake('numberBetween', null, 1, 200)` to call Faker. Pass the provider to call
-followed by the locale (or null) and then the arguments to the provider. Here
-is a detailed yaml example.
 
-```yaml
-Nelmio\Entity\User:
-    user{1..10}:
-        username: 'User<identity($fake("numberBetween", 1, 100) / 2 + 5)>'
-```
+### Random data
 
-In plain PHP fixtures the `$fake` closure is also available.
+The underlying [Faker][1] library is using a [seed for its data generators][2]
+which if set (this is the default) will ensure you will get the same data
+between two loadings.
 
-**Warning**: the usage of the `$fake` closure has been deprecated since in v2.2.0 and will be removed in v3.0.0.
+If you wish to generate different data on each loading, you can reset the seed
+by overriding the `getSeed()` method when using the `NativeLoader` or the
+the parameter `nelmio_alice.seed` if you are using Symfony.
 
 
 ### Localized Fake Data
 
 Faker can create localized data for addresses, phone numbers and so on. You can
-set the default locale to use by passing a `locale` value in the `$options`
-array of `Fixtures::load`.
+set the default locale to use by configuring the `locale` value used by Faker
+generator. With `NativeLoader`, this can be done by overriding the
+`createFakerGenerator()` method. In Symfony, override the
+`nelmio_alice.faker.generator` service.
 
 Additionally, you can mix locales by adding a locale prefix to the faker key,
 i.e. `<fr_FR:phoneNumber()>` or `<de_DE:firstName()>`.
@@ -50,46 +57,62 @@ i.e. `<fr_FR:phoneNumber()>` or `<de_DE:firstName()>`.
 
 ### Default Providers
 
+<<<<<<< HEAD
 Alice includes a default identity provider, `<identity()>`, that
 simply returns whatever is passed to it. This allows you among other
 things to use a PHP expression while still benefitting from
 [variable replacement](fixtures-refactoring.md#variables). This is similar to an `eval()`
 call, allowing you to do things like math or similar, e.g.
 `<identity(1 + $favoriteNumber)>`.
+=======
+Alice default Faker provider can be found in [AliceProvider](../src/Faker/Provider/AliceProvider.php).
+>>>>>>> master
 
-Some syntactic sugar is provided for this as well, and `<($whatever)>`
-is an alias for `<identity($whatever)>`.
+### Identity
+
+Alice includes a default identity provider, `<identity()>`, that evaluates whatever
+is passed to it and returns the evaluated value. As a result, you can use it to do
+arithmetic operations such as `<identity(1 * 2)>` or use PHP expressions like
+`<identity(new \DateTimeImmutable('2016-09-16'))>`.
+
+The identity function supports still references and variables so you can still do
+`<identity($favoriteNumber * @user1->favoriteNumber)>`. The value of current,
+usually used with `<current()>`, is accessible via the `$current` variable.
+
+Some syntactic sugar is provided for this as well, and `<($whatever)>` is an alias
+for `<identity($whatever)>`.
 
 **Note:** the behaviour of identity will change in 3.0. It will strictly be equivalent to
 an eval at the exception of being able to use references (e.g. `<(@user->name . '!')>`
 and variables (e.g. `<($name)>`).
 
 
-## Reuse generated data using objects value
+### Current
 
-Sometimes you require value objects that are not persisted by an ORM, but
-are just stored on other objects. You can use the `(local)` flag on the class
-or the instance name to mark them as non-persistable. They will be available
-as references to use in other objects, but will not be returned by the
-`LoaderInterface::load` call.
-
-For example this avoids getting an error because Geopoint is not an Entity
-if you use the Doctrine persister.
+Returns the current value in the context of a collection:
 
 ```yaml
-Nelmio\Data\Geopoint (local):
-    geo1:
-        __construct: ['<latitude()>', '<longitude()>']
+stdClass:
+    dummy{1..2}:
+        currentValue: <current()> # is equivalent to '$current'
+```
 
-Nelmio\Entity\Location:
-    loc{1..100}:
-        name: '<city()>'
-        geopoint: '@geo1'
+
+### Cast
+
+The cast method was added at some point, but you should use PHP internals like `intval` or `boolval` instead:
+
+```yaml
+stdClass:
+    dummy{1..2}:
+        intval: <intval("1")>
+        boolval: <boolval(1)>
 ```
 
 
 ## Custom Faker Data Providers
 
+<<<<<<< HEAD
 Sometimes you need more than what Faker and Alice provide you natively, and
 there are three ways to solve the problem:
 
@@ -106,10 +129,15 @@ if you do too much logic, so it's best to extract logic out of the templates.
 All the public methods are available as `<method()>` in the Alice fixture files.
 For example if you want a custom group name generator and you use the standard
 Doctrine Fixtures package in a Symfony2 project, you could do the following:
+=======
+Sometimes you need more than what Faker and Alice provide you natively. For
+that, you can register a custom [Faker Provider](https://github.com/FakerPHP/Faker/tree/main/src/Faker/Provider) class:
+>>>>>>> master
 
 ```php
 <?php
 
+<<<<<<< HEAD
 namespace AppBundle\DataFixtures\ORM;
 
 use Doctrine\Common\Persistence\ObjectManager;
@@ -147,6 +175,9 @@ That way you can now use `name: '<groupName()>'` to generate specific group name
 <?php
 
 namespace AppBundle\DataFixtures\ORM;
+=======
+namespace App\Faker\Provider;
+>>>>>>> master
 
 use Faker\Provider\Base as BaseProvider;
 
@@ -215,10 +246,10 @@ final class JobProvider extends BaseProvider
            ),
            self::randomElement(self::TITLE_PROVIDER['fullname']),
        ];
-       
+
        return self::randomElement($names);
    }
-   
+
    /**
     * @return string Random job abbreviation title
     */
@@ -229,14 +260,50 @@ final class JobProvider extends BaseProvider
 }
 ```
 
-You will need to inject a Faker generator instance, which you can get thanks to
-[`Nelmio\Alice\Instances\Processor\Methods\Faker`](../src/Nelmio/Alice/Instances/Processor/Methods/Faker.php).
+Then you can add it to the Faker Generator used by Alice by either overriding
+the `NativeLoader::createFakerGenerator()` method.
+ 
+If you are using Symfony, custom Faker providers are registered by adding the
+tag `nelmio_alice.faker.provider` to the services. Note that this is automatically
+done if your service extends `Faker\Provider\Base` and have `autoconfigure` and `autowire` enabled:
 
-Then, inject your provider to the [`Nelmio\Alice\Fixtures\Loader`](../src/Nelmio/Alice/Fixtures/Loader.php) or when
-calling [`Nelmio\Alice\Fixtures::load()`](../src/Nelmio/Alice/Fixtures.php#L55).
+```yaml
+# config/services.yaml
 
+<<<<<<< HEAD
+=======
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\Faker\Provider\JobProvider: ~
+```
+
+or:
+
+
+```yaml
+# config/services.yaml
+
+services:
+    App\Faker\Provider\JobProvider:
+        arguments:
+            - '@Faker\Generator'
+        tags: [ { name: nelmio_alice.faker.provider } ]
+```
+
+>>>>>>> master
 
 <br />
 <hr />
 
+<<<<<<< HEAD
 « [Keep Your Fixtures Dry](fixtures-refactoring.md) • [Event handling with Processors](processors.md) »
+=======
+« [Keep Your Fixtures Dry](fixtures-refactoring.md) • [Table of Contents](../README.md#table-of-contents) »
+
+
+[1]: https://github.com/FakerPHP/Faker
+[2]: https://fakerphp.github.io/#seeding-the-generator
+>>>>>>> master
